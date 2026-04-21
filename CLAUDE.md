@@ -4,12 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stack
 
-- **Framework**: Next.js 14+ with App Router
+- **Framework**: Next.js 16 with App Router
 - **Database / Backend**: Supabase (PostgreSQL, Auth, Storage, Realtime)
 - **Auth**: Supabase Auth with Row Level Security (RLS)
-- **UI**: Tailwind CSS + shadcn/ui
+- **UI**: Tailwind CSS v4 + shadcn/ui
 - **Language**: TypeScript
 - **Package Manager**: pnpm
+
+> **Important**: This project uses **Next.js 16** and **Tailwind CSS v4**, which have breaking changes from prior versions. Read `node_modules/next/dist/docs/` for Next.js specifics. Tailwind v4 uses CSS-based configuration (no `tailwind.config.ts`) — custom theme tokens are defined in `globals.css` with `@theme`.
 
 ## Commands
 
@@ -39,19 +41,24 @@ app/
   (auth)/           # unauthenticated pages (login, signup) with their own layout
   (dashboard)/      # protected pages with authenticated layout
   api/              # Route Handlers (webhooks, external integrations)
-  layout.tsx        # root layout
-  middleware.ts     # Supabase session refresh + auth route protection
+  layout.tsx        # root layout — Poppins font applied here
+  globals.css       # Tailwind v4 @theme tokens (gold palette, fonts, shadcn vars)
 components/
-  ui/               # shadcn/ui generated components — do not hand-edit these
+  layout/
+    sidebar.tsx     # collapsible nav sidebar (client component)
+    header.tsx      # top bar: breadcrumbs, live clock, user avatar/logout (client component)
+    app-shell.tsx   # composes sidebar + header + main content
+  ui/               # shadcn/ui generated components — do not hand-edit
   <feature>/        # feature-scoped components (e.g. inventory/, orders/)
 lib/
   supabase/
     client.ts       # browser client (createBrowserClient) — use in Client Components
     server.ts       # server client (createServerClient + cookies) — use in Server Components, Route Handlers, Server Actions
-  utils.ts          # shared utilities including cn() for Tailwind class merging
+  utils.ts          # shared utilities including cn() for class merging
 types/
   database.types.ts # auto-generated Supabase types (do not hand-edit)
   index.ts          # hand-authored shared TypeScript types
+proxy.ts            # Supabase session refresh + route protection (Next.js 16: file is proxy.ts, export is `proxy`, not `middleware`)
 ```
 
 ## Architecture Conventions
@@ -69,14 +76,21 @@ types/
 **Row Level Security**
 - RLS must be enabled on every Supabase table. All access control is enforced at the database level via RLS policies, not only in application code.
 
-**Environment variables**
+**Tailwind v4 custom tokens**
+- Custom colors (gold palette) and font variables are defined in `app/globals.css` inside `@theme inline { ... }`.
+- There is no `tailwind.config.ts`. Do not create one.
+- Use `bg-gold-500`, `text-gold-600`, etc. just like standard Tailwind utilities.
+
+**shadcn/ui components**
+- Always add new UI primitives via `pnpm dlx shadcn@latest add <component>` — this places the component in `components/ui/`.
+- Do not manually edit files in `components/ui/`; re-run the add command to update them.
+
+## Environment Variables
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=     # server-only
 ```
-Copy `.env.local.example` to `.env.local` for local development.
 
-**shadcn/ui components**
-- Always add new UI primitives via `pnpm dlx shadcn@latest add <component>` — this places the component in `components/ui/`.
-- Do not manually edit files in `components/ui/`; re-run the add command to update them.
+Copy `.env.local.example` to `.env.local` for local development.
